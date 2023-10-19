@@ -9,11 +9,14 @@
 #include "core/Scene.h"
 
 #include "sensor/SensorCamera.h"
+#include "sensor/SensorIMU.h"
 
 #include "render/ImagePool.h"
 #include "render/SlamRenderer.h"
 
 #include "utils/Timer.h"
+#include "utils/Communicator.h"
+
 
 namespace android_slam
 {
@@ -41,20 +44,26 @@ namespace android_slam
         void update(float dt) override;
         void drawGui(float dt) override;
 
+
     private:
         std::unique_ptr<ImagePool>    m_image_pool;
+        std::unique_ptr<SensorIMU>    m_imu_pool;
         std::unique_ptr<SlamRenderer> m_slam_renderer;
         std::unique_ptr<SlamKernel>   m_slam_kernel;
 
         std::unique_ptr<std::thread> m_slam_thread;
         std::vector<Image>           m_images;
+        std::vector<ImuPoint>        m_imu_points;
+
         TrackingResult               m_tracking_result;
         std::mutex                   m_image_mutex;
         std::mutex                   m_tracking_res_mutex;
-        std::atomic_bool             m_slam_has_new_image = false;
+        std::atomic_bool             m_slam_has_new_data = false;
         std::atomic_bool             m_is_running_slam = true;
 
         bool m_need_update_image = true;
+
+        Communicator comm;
     };
 
 }
