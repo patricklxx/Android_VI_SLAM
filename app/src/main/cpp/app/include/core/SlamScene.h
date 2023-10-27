@@ -63,6 +63,10 @@ namespace android_slam
 
         bool m_need_update_image = true;
 
+        std::unique_ptr<std::thread> m_comm_thread;
+        std::mutex                   m_comm_mutex;
+        std::atomic_bool             m_comm_has_new_data = false;
+        TrackingResult               m_comm_result;
         Communicator comm;
     };
 

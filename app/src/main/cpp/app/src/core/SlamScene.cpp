@@ -76,13 +76,37 @@ namespace android_slam
                         std::unique_lock<std::mutex> lock(m_tracking_res_mutex);
                         m_tracking_result = std::move(res);
                     }
-                    if(m_tracking_result.tracking_status == "OK")
-                    {
-                        comm.Run(m_tracking_result.trajectory.back().x, m_tracking_result.trajectory.back().y, m_tracking_result.trajectory.back().z);
-                    }
+
                 }
             }
         }
+        );
+        // Create communication thread.
+        m_comm_thread = std::make_unique<std::thread>(
+                [this]()
+                {
+                    while (m_is_running_slam){
+                        TrackingResult tracking_res_comm;
+                        if(m_comm_has_new_data) {
+                            {
+                                std::unique_lock<std::mutex> lock(m_comm_mutex);
+                                tracking_res_comm = m_comm_result;
+                            }
+                            DEBUG_INFO("[Android Slam App Info] Before communication.");
+                            if (tracking_res_comm.tracking_status == "OK") {
+                                /*
+                                comm.Run(tracking_res_comm.trajectory.back().x,
+                                         tracking_res_comm.trajectory.back().y,
+                                         tracking_res_comm.trajectory.back().z);
+                                */
+                                 comm.Run(tracking_res_comm);
+                            }
+                            DEBUG_INFO("[Android Slam App Info] After communication.");
+                            m_comm_has_new_data = false;
+                        }
+
+                    }
+                }
         );
     }
 
@@ -118,7 +142,6 @@ namespace android_slam
                 std::unique_lock<std::mutex> lock(m_tracking_res_mutex);
                 tracking_res = std::move(m_tracking_result);
             }
-
             DEBUG_INFO("[Android Slam App Info] Current tracking state: %s", tracking_res.tracking_status.c_str());
 
             // Set slam data.
@@ -126,6 +149,16 @@ namespace android_slam
             m_slam_renderer->setData(tracking_res);
 
             m_app_ref.m_last_process_delta_time = tracking_res.processing_delta_time;
+
+            //set comm data
+            if(!m_comm_has_new_data)
+            {
+                {
+                    std::unique_lock<std::mutex> lock(m_comm_mutex);
+                    m_comm_result = std::move(tracking_res);
+                }
+            }
+            m_comm_has_new_data = true;
         }
 
         // Draw trajectory.

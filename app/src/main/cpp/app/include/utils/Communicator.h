@@ -11,6 +11,8 @@
 #include <fstream>
 #include <vector>
 
+#include <SlamKernel.h>
+
 namespace android_slam
 {
     class Communicator
@@ -18,6 +20,7 @@ namespace android_slam
     public:
         Communicator();
         void Run(float x, float y, float z);
+        void Run(TrackingResult track_res);
     };
 
 

@@ -42,5 +42,45 @@ namespace android_slam
         return;
     }
 
+    void Communicator::Run(TrackingResult track_res)
+    {
+        int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (socket_fd == -1)
+        {
+            //std::cout << "socket 创建失败：" << std::endl;
+            DEBUG_INFO("[Android Slam App Info] Socket create failed.");
+            return;
+        }
+        DEBUG_INFO("[Android Slam App Info] Socket create succesfully.");
+        struct sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_port = htons(8888);
+        addr.sin_addr.s_addr = inet_addr("10.134.115.5");
+
+        int res = connect(socket_fd, (struct sockaddr *)&addr, sizeof(addr));
+        if (res == -1)
+        {
+            DEBUG_INFO("[Android Slam App Info] Socket connect failed.");
+            return;
+        }
+        DEBUG_INFO("[Android Slam App Info] Socket connect successfully.");
+
+        uint32_t size = track_res.trajectory.size() * 3;
+        send(socket_fd, (char *)&size, sizeof(uint32_t), 0);
+
+        float commu_data[size];
+        int count = 0;
+        for(auto &data : track_res.trajectory)
+        {
+            commu_data[count++] = data.x;
+            commu_data[count++] = data.y;
+            commu_data[count++] = data.z;
+        }
+        send(socket_fd, (char *)commu_data, sizeof(commu_data), 0);
+        close(socket_fd);
+        //usleep(100000);
+        return;
+    }
+
 }
 

@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.18.1)
 
-project("AndroidSlam")
+project("Android_VI_Slam")
 
     add_library(NativeGlue STATIC
         ${CMAKE_ANDROID_NDK}/sources/android/native_app_glue/android_native_app_glue.h
