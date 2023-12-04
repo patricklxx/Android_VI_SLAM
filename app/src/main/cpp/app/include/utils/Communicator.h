@@ -22,7 +22,4 @@ namespace android_slam
         void Run(float x, float y, float z);
         void Run(TrackingResult track_res);
     };
-
-
-
 }

@@ -8,6 +8,7 @@
 
 #include "utils/Log.h"
 #include "utils/AssetManager.h"
+#include "utils/ImageLoader.h"
 
 
 namespace android_slam
@@ -15,14 +16,23 @@ namespace android_slam
 
     void SlamScene::init()
     {
-        // Camera image converter.
-        m_image_pool = std::make_unique<ImagePool>(
-        k_sensor_camera_width, k_sensor_camera_height, "shader/yuv2rgb.vert", "shader/yuv2rgb.frag"
-        );
-        Image first_image = m_image_pool->getImage();
+        Image first_image;
+        if(!m_from_datasets) {
+            // Camera image converter.
+            m_image_pool = std::make_unique<ImagePool>(
+                    k_sensor_camera_width, k_sensor_camera_height, "shader/yuv2rgb.vert",
+                    "shader/yuv2rgb.frag"
+            );
+            first_image = m_image_pool->getImage();
 
-        //IMU data converter
-        m_imu_pool = std::make_unique<SensorIMU>();
+            //IMU data converter
+            m_imu_pool = std::make_unique<SensorIMU>();
+        }
+        else{
+            DatasetImage = ImageLoader::loadDatasetImage("f304/dark_clahe");
+            first_image = DatasetImage[0];
+            //DatasetImu = ImageLoader::loadDatasetImu("data10/imu.txt");
+        }
 
         m_slam_renderer = std::make_unique<SlamRenderer>(
         k_fps_camera_fov, m_app_ref.getWindow().getAspectRatio(), k_fps_camera_z_min, k_fps_camera_z_max
@@ -68,7 +78,8 @@ namespace android_slam
                     }
 
                     // Call slam tracking function.
-                    auto res = m_slam_kernel->handleData(images, imu_points);
+                    //auto res = m_slam_kernel->handleData(images, imu_points);
+                    auto res = m_slam_kernel->handleData(images, {});
                     m_slam_has_new_data = false; // This image is processed and this thread needs new image.
 
                     // Synchronize tracking result to main thread, move the data because this thread doesn't need it.
@@ -82,32 +93,33 @@ namespace android_slam
         }
         );
         // Create communication thread.
-        m_comm_thread = std::make_unique<std::thread>(
-                [this]()
-                {
-                    while (m_is_running_slam){
-                        TrackingResult tracking_res_comm;
-                        if(m_comm_has_new_data) {
-                            {
-                                std::unique_lock<std::mutex> lock(m_comm_mutex);
-                                tracking_res_comm = m_comm_result;
+        if(m_open_comm) {
+            m_comm_thread = std::make_unique<std::thread>(
+                    [this]() {
+                        while (m_is_running_slam) {
+                            TrackingResult tracking_res_comm;
+                            if (m_comm_has_new_data) {
+                                {
+                                    std::unique_lock<std::mutex> lock(m_comm_mutex);
+                                    tracking_res_comm = m_comm_result;
+                                }
+                                DEBUG_INFO("[Android Slam App Info] Before communication.");
+                                if (tracking_res_comm.tracking_status == "OK") {
+                                    /*
+                                    comm.Run(tracking_res_comm.trajectory.back().x,
+                                             tracking_res_comm.trajectory.back().y,
+                                             tracking_res_comm.trajectory.back().z);
+                                    */
+                                    comm.Run(tracking_res_comm);
+                                }
+                                DEBUG_INFO("[Android Slam App Info] After communication.");
+                                m_comm_has_new_data = false;
                             }
-                            DEBUG_INFO("[Android Slam App Info] Before communication.");
-                            if (tracking_res_comm.tracking_status == "OK") {
-                                /*
-                                comm.Run(tracking_res_comm.trajectory.back().x,
-                                         tracking_res_comm.trajectory.back().y,
-                                         tracking_res_comm.trajectory.back().z);
-                                */
-                                 comm.Run(tracking_res_comm);
-                            }
-                            DEBUG_INFO("[Android Slam App Info] After communication.");
-                            m_comm_has_new_data = false;
-                        }
 
+                        }
                     }
-                }
-        );
+            );
+        }
     }
 
     void SlamScene::exit()
@@ -129,14 +141,30 @@ namespace android_slam
         {
             // Slam handling.
             std::vector<Image> images;
-            images.push_back(m_image_pool->getImage());
-            {
-                std::unique_lock<std::mutex> lock(m_image_mutex);
-                m_images = images;
-                m_imu_points = m_imu_pool->getImuData();
+            std::vector<ImuPoint> imus;
+            if(!m_from_datasets) {
+                images.push_back(m_image_pool->getImage());
+                {
+                    std::unique_lock<std::mutex> lock(m_image_mutex);
+                    m_images = images;
+                    m_imu_points = m_imu_pool->getImuData();
+                }
+                m_slam_has_new_data = true;
             }
-            m_slam_has_new_data = true;
-
+            else{
+                {
+                    images.push_back(DatasetImage[m_datasets_num]);
+                    //imus = ImageLoader::getImuDataset(DatasetImu,
+                    //                                  DatasetImage[m_datasets_num].time_stamp,
+                    //                                  DatasetImage[m_datasets_num-1].time_stamp);
+                    m_datasets_num++;
+                    usleep(20000);
+                    std::unique_lock<std::mutex> lock(m_image_mutex);
+                    m_images = images;
+                    //m_imu_points = imus;
+                }
+                m_slam_has_new_data = true;
+            }
             TrackingResult tracking_res;
             {
                 std::unique_lock<std::mutex> lock(m_tracking_res_mutex);

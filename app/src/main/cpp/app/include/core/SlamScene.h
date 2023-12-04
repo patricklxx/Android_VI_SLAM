@@ -63,11 +63,17 @@ namespace android_slam
 
         bool m_need_update_image = true;
 
+        bool m_open_comm = false;
         std::unique_ptr<std::thread> m_comm_thread;
         std::mutex                   m_comm_mutex;
         std::atomic_bool             m_comm_has_new_data = false;
         TrackingResult               m_comm_result;
         Communicator comm;
+
+        bool m_from_datasets = 0; //是否从数据集中获取离线数据
+        int m_datasets_num = 1; //数据集传入的第几张图片
+        std::vector<Image> DatasetImage;
+        std::vector<ImuPoint> DatasetImu;
     };
 
 }

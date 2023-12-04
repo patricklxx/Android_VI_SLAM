@@ -7,7 +7,7 @@ namespace android_slam
 {
     Communicator::Communicator()
     {
-        DEBUG_INFO("[Android Slam App Info] Communicator Start.");
+        DEBUG_INFO("[Android Slam App Info] Communicator is built.");
     }
 
     void Communicator::Run(float x, float y, float z)
