@@ -4,9 +4,13 @@
 
 #include <android/asset_manager.h>
 
+#include "SlamKernel.h"
+
+#include <android/log.h>
+#define DEBUG_INFO(...) ::__android_log_print(ANDROID_LOG_INFO, "[Android SLAM DEBUG]", __VA_ARGS__)
+
 namespace android_slam
 {
-
     class AssetManager
     {
     public:
@@ -15,8 +19,14 @@ namespace android_slam
         static AAssetManager* get() { return s_asset_manager; }
         static void set(AAssetManager* manager) { s_asset_manager = manager; }
 
+        static void readFile();
+        static void writeFile();
+        void savetraj();
+        void gettraj(TrackingResult tracking_res);
+
     private:
         static AAssetManager* s_asset_manager;
+        TrackingResult result;
     };
 
 }

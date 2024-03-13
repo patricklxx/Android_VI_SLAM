@@ -21,4 +21,82 @@ namespace android_slam
         return true;
     }
 
+    void AssetManager::readFile()
+    {
+        const char* path = "/storage/emulated/0/Pictures/test.txt";//共享存储路径
+        //const char* path = "/storage/emulated/0/Android/data/cntlab.f304.androidslam/files/test.txt";//应用专属存储空间
+        FILE *file;
+        file = fopen(path, "wb");
+        if (file != NULL) {
+            //读文件成功"
+            DEBUG_INFO("[AssetManager::readFile] Open file successfully");
+            char buffer[1024]={0};
+            while(fread(buffer, sizeof(char),1024,file)!=0){
+                DEBUG_INFO("[AssetManager::readFile] content:%s",buffer);
+            }
+            fclose(file);
+        } else {
+            //"读文件失败"
+            int errNum = errno;
+            DEBUG_INFO("[AssetManager::readFile] Open file failed");
+            DEBUG_INFO("[AssetManager::readFile] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
+        }
+        return;
+
+    }
+
+    void AssetManager::writeFile()
+    {
+        const char* path = "/storage/emulated/0/Pictures/test.txt";//共享存储路径
+        //const char* path = "/storage/emulated/0/Android/data/cntlab.f304.androidslam/files/test.txt";//应用专属存储空间
+        FILE *file;
+        file = fopen(path, "wb");
+        if (file != NULL) {
+            //打开文件成功"
+            DEBUG_INFO("[AssetManager::readFile] Open file successfully");
+            char buffer[1024]={0};
+            buffer[0] = 'h';
+            buffer[1] = 'e';
+            buffer[2] = 'l';
+            buffer[3] = 'l';
+            buffer[4] = 'o';
+            size_t count = fwrite(buffer, sizeof(char),5,file);
+            DEBUG_INFO("[AssetManager::readFile] fread : buffer = %s , write count = %u\n", buffer, count);
+
+            fclose(file);
+        } else {
+            //"读文件失败"
+            int errNum = errno;
+            DEBUG_INFO("[AssetManager::readFile] Open file failed");
+            DEBUG_INFO("[AssetManager::readFile] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
+        }
+        return;
+
+    }
+    void AssetManager::savetraj()
+    {
+        const char* path = "/storage/emulated/0/Documents/trajectory.txt";//共享存储路径
+        FILE *file;
+        file = fopen(path, "wb");
+        if (file != NULL) {
+            //打开文件成功"
+            DEBUG_INFO("[AssetManager::savetraj] Open file successfully");
+            for(int i = 0; i < result.trajectory.size(); ++i)
+                fprintf(file, "%f %f %f\n", result.trajectory[i].x, result.trajectory[i].y, result.trajectory[i].z);
+            DEBUG_INFO("[AssetManager::savetraj] finish saving ");
+            fclose(file);
+        } else {
+            //"打开文件失败"
+            int errNum = errno;
+            DEBUG_INFO("[AssetManager::savetraj] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
+        }
+        return;
+    }
+
+    void AssetManager::gettraj(TrackingResult tracking_res)
+    {
+        result = tracking_res;
+        return;
+    }
+
 }

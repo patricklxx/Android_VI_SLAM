@@ -16,6 +16,7 @@
 
 #include "utils/Timer.h"
 #include "utils/Communicator.h"
+#include "utils/AssetManager.h"
 
 
 namespace android_slam
@@ -70,10 +71,15 @@ namespace android_slam
         TrackingResult               m_comm_result;
         Communicator comm;
 
+        //离线数据
         bool m_from_datasets = 0; //是否从数据集中获取离线数据
         int m_datasets_num = 1; //数据集传入的第几张图片
         std::vector<Image> DatasetImage;
         std::vector<ImuPoint> DatasetImu;
+
+        //本地文件管理
+        std::unique_ptr<AssetManager> m_file_manager;
+
     };
 
 }

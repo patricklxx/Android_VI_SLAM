@@ -10,12 +10,13 @@
 #include "utils/AssetManager.h"
 #include "utils/ImageLoader.h"
 
-
 namespace android_slam
 {
 
     void SlamScene::init()
     {
+        m_file_manager = std::make_unique<AssetManager>();
+
         Image first_image;
         if(!m_from_datasets) {
             // Camera image converter.
@@ -178,6 +179,8 @@ namespace android_slam
 
             m_app_ref.m_last_process_delta_time = tracking_res.processing_delta_time;
 
+            m_file_manager->gettraj(tracking_res);
+
             //set comm data
             if(!m_comm_has_new_data)
             {
@@ -225,6 +228,12 @@ namespace android_slam
             if (ImGui::Button(u8"退出"))
             {
                 m_app_ref.setActiveScene("Init");
+            }
+
+            
+            if (ImGui::Button(u8"保存轨迹"))
+            {
+                m_file_manager->savetraj();
             }
 
             ImGui::TreePop();
