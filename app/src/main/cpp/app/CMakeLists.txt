@@ -16,6 +16,8 @@ project(android_slam)
     target_include_directories(${PROJECT_NAME}
         PRIVATE ./include
         PRIVATE ${GLM_INCLUDE_DIRS}
+        PRIVATE ../external/eigen3
+        PRIVATE ../external/Sophus
     )
     target_link_libraries(${PROJECT_NAME}
         -landroid

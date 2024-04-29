@@ -30,6 +30,7 @@ project(orbslam3)
         PRIVATE ../external/g2o
         PRIVATE ../external/Sophus
     )
+
     target_link_libraries(${PROJECT_NAME}
         ${OpenCV_LIBS}
         g2o

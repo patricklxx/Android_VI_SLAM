@@ -1531,11 +1531,15 @@ namespace ORB_SLAM3
                     {
                         Verbose::PrintMess("TRACK: Track with respect to the reference KF ", Verbose::VERBOSITY_DEBUG);
                         bOK = TrackReferenceKeyFrame();
+                        if(!bOK)
+                            DEBUG_INFO("[Track] TrackReferenceKeyFrame Failed");
                     }
                     else
                     {
                         Verbose::PrintMess("TRACK: Track with motion model", Verbose::VERBOSITY_DEBUG);
                         bOK = TrackWithMotionModel();
+                        if(!bOK)
+                            DEBUG_INFO("[Track] TrackWithMotionModel Failed");
                         if (!bOK)
                             bOK = TrackReferenceKeyFrame();
                     }
@@ -1588,7 +1592,11 @@ namespace ORB_SLAM3
                             bOK = Relocalization();
                             //std::cout << "mCurrentFrame.mTimeStamp:" << to_string(mCurrentFrame.mTimeStamp) << std::endl;
                             //std::cout << "mTimeStampLost:" << to_string(mTimeStampLost) << std::endl;
-                            if (mCurrentFrame.mTimeStamp - mTimeStampLost > 3.0f && !bOK)
+                            DEBUG_INFO("[Track] mCurrentFrame.mTimeStamp = %f", mCurrentFrame.mTimeStamp);
+                            DEBUG_INFO("[Track] mTimeStampLost = %f", mTimeStampLost);
+                            DEBUG_INFO("[Track] mCurrentFrame.mTimeStamp - mTimeStampLost = %f", mCurrentFrame.mTimeStamp - mTimeStampLost);
+                            DEBUG_INFO("[Track] bOK = %d", bOK);
+                            if (mCurrentFrame.mTimeStamp - mTimeStampLost > 1.5f && !bOK)//原3fs
                             {
                                 mState = LOST;
                                 Verbose::PrintMess("Track Lost...", Verbose::VERBOSITY_NORMAL);
@@ -1714,7 +1722,8 @@ namespace ORB_SLAM3
 
                 }
                 if (!bOK)
-                    cout << "Fail to track local map!" << endl;
+                    //cout << "Fail to track local map!" << endl;
+                    DEBUG_INFO("[Track] Fail to track local map!");
             }
             else
             {
@@ -2176,7 +2185,12 @@ namespace ORB_SLAM3
 
         // Scale initial baseline
         Sophus::SE3f Tc2w = pKFcur->GetPose();
-        Tc2w.translation() *= invMedianDepth;
+        //DEBUG_INFO("[TRacking::CreateInitialMapMonocular] translation.x = %f", Tc2w.translation().x());
+        //DEBUG_INFO("[TRacking::CreateInitialMapMonocular] translation.y = %f", Tc2w.translation().y());
+        //DEBUG_INFO("[TRacking::CreateInitialMapMonocular] translation.z = %f", Tc2w.translation().z());
+        //Tc2w.translation() *= invMedianDepth;
+        Tc2w.translation() *= 0.003                           ;
+        //DEBUG_INFO("[TRacking::CreateInitialMapMonocular] invMedianDepth = %f", invMedianDepth);
         pKFcur->SetPose(Tc2w);
 
         // Scale points
@@ -2482,6 +2496,7 @@ namespace ORB_SLAM3
             Verbose::PrintMess("Matches with wider search: " + to_string(nmatches), Verbose::VERBOSITY_NORMAL);
 
         }
+        //DEBUG_INFO("[TrackWithMotionModel] nmatches = %d ", nmatches);
 
         if (nmatches < 20)
         {
@@ -2520,7 +2535,7 @@ namespace ORB_SLAM3
                     nmatchesMap++;
             }
         }
-
+        //DEBUG_INFO("[TrackWithMotionModel] nmatchesMap = %d ", nmatchesMap);
         if (mbOnlyTracking)
         {
             mbVO = nmatchesMap < 10;

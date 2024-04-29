@@ -5,6 +5,14 @@
 #include <tuple>
 #include <array>
 
+#include <sophus/se3.hpp>
+#include <opencv2/core/core.hpp>
+#include <opencv2/calib3d/calib3d.hpp>
+#include <opencv2/core/eigen.hpp>
+#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <Eigen/SVD>
+
 namespace ORB_SLAM3
 {
     class System;
@@ -59,9 +67,14 @@ namespace android_slam
         SlamKernel& operator=(const SlamKernel&) = delete;
         ~SlamKernel();
 
-        TrackingResult handleData(const std::vector<Image>& images, const std::vector<ImuPoint>& imus);
+        TrackingResult handleData(const std::vector<Image>& images, const std::vector<ImuPoint>& imus, const float scale);
 
         void reset();
+
+        void setPtsRel(float x, float y, float z) { pts_rel.push_back({x, y, z}); };
+        int getPtsRelSize() { return pts_rel.size(); }
+        void setCalRt(bool flag) { CalRt = flag; }
+        void CalculateRt();
 
     private:
         int32_t m_width;
@@ -71,6 +84,13 @@ namespace android_slam
         std::unique_ptr<::ORB_SLAM3::System> m_orb_slam;
 
         std::chrono::steady_clock::time_point m_last_time;
+
+        std::vector<cv::Point3f> pts_abs;
+        std::vector<cv::Point3f> pts_rel;
+        Eigen::Matrix3f R;
+        Eigen::Vector3f t;
+        bool CalRt = false;
+
     };
 
 }

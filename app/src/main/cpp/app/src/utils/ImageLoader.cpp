@@ -84,8 +84,9 @@ namespace image_loader_utils
                     //DEBUG_INFO("[ImageLoader]: camera_time_stamp: %ld",time_stamp);
                     DatasetImg.push_back(Image{ std::move(image_data), time_stamp });
                      */
-                    time_stamp = std::stol(strOpen);
-                    DEBUG_INFO("[ImageLoader]: camera_time_stamp: %ld",time_stamp);
+                    double time_s = (std::stold(strOpen) / 30);//单位为秒
+                    time_stamp = (int64_t) (time_s * 1000000000);//单位为纳秒，时间戳单位为纳秒
+                    DEBUG_INFO("[ImageLoader]: time_stamp: %ld",time_stamp);
                     DatasetImg.push_back(Image{ std::move(image_data), time_stamp });
 
                     AAsset_close(asset);

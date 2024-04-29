@@ -32,7 +32,8 @@ public class MainActivity extends NativeActivity
     private static String[] PERMISSIONS_STORAGE = {
             "android.permission.READ_EXTERNAL_STORAGE",
             "android.permission.WRITE_EXTERNAL_STORAGE",
-            "android.permission.MANAGE_EXTERNAL_STORAGE"
+            "android.permission.MANAGE_EXTERNAL_STORAGE",
+            "android.permission.MOUNT_UNMOUNT_FILESYSTEMS"
     };
     public void verifyStoragePermission(NativeActivity activity){
         try{

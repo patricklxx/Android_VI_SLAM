@@ -21,28 +21,31 @@ namespace android_slam
         return true;
     }
 
-    void AssetManager::readFile()
+
+    std::string AssetManager::readFile(const std::string fileAdd)
     {
-        const char* path = "/storage/emulated/0/Pictures/test.txt";//共享存储路径
+        //const char* path = "/storage/emulated/0/Documents/IPAdd.txt";//共享存储路径
         //const char* path = "/storage/emulated/0/Android/data/cntlab.f304.androidslam/files/test.txt";//应用专属存储空间
+        const char* path = fileAdd.c_str();
+        std::string content;
         FILE *file;
-        file = fopen(path, "wb");
+        file = fopen(path, "r");
         if (file != NULL) {
             //读文件成功"
-            DEBUG_INFO("[AssetManager::readFile] Open file successfully");
+            DEBUG_INFO("[AssetManager::readFile] Open File successfully");
             char buffer[1024]={0};
-            while(fread(buffer, sizeof(char),1024,file)!=0){
-                DEBUG_INFO("[AssetManager::readFile] content:%s",buffer);
+            while(fread(buffer, sizeof(char),1,file)!=0) {
+                content += buffer;
+                //DEBUG_INFO("[AssetManager::readFile] ipadd:%s",buffer);
             }
             fclose(file);
-        } else {
+        }
+        else {
             //"读文件失败"
             int errNum = errno;
-            DEBUG_INFO("[AssetManager::readFile] Open file failed");
             DEBUG_INFO("[AssetManager::readFile] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
         }
-        return;
-
+        return content;
     }
 
     void AssetManager::writeFile()
@@ -73,7 +76,7 @@ namespace android_slam
         return;
 
     }
-    void AssetManager::savetraj()
+    void AssetManager::saveTraj()
     {
         const char* path = "/storage/emulated/0/Documents/trajectory.txt";//共享存储路径
         FILE *file;
@@ -93,7 +96,42 @@ namespace android_slam
         return;
     }
 
-    void AssetManager::gettraj(TrackingResult tracking_res)
+    void AssetManager::saveCurPos() {
+        const char* path = "/storage/emulated/0/Documents/MarkPos.txt";//共享存储路径
+        FILE *file;
+        file = fopen(path, "a");
+        if (file != NULL) {
+            //打开文件成功"
+            DEBUG_INFO("[AssetManager::saveCurPos] Open file successfully");
+            fprintf(file, "%f %f %f\n", result.trajectory.back().x, result.trajectory.back().y, result.trajectory.back().z);
+            DEBUG_INFO("[AssetManager::saveCurPos] finish saving ");
+            fclose(file);
+        } else {
+            //"打开文件失败"
+            int errNum = errno;
+            DEBUG_INFO("[AssetManager::saveCurPos] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
+        }
+        return;
+    }
+
+    void AssetManager::clearFile(const std::string fileAdd) {
+        const char* path = fileAdd.c_str();
+        FILE *file;
+        file = fopen(path, "wb");
+        if (file != NULL) {
+            //读文件成功"
+            DEBUG_INFO("[AssetManager::clearFile] clear File successfully");
+            fclose(file);
+        }
+        else {
+            //"读文件失败"
+            int errNum = errno;
+            DEBUG_INFO("[AssetManager::readFile] open fail errno = %d reason = %s \n", errNum,  strerror(errNum));
+        }
+        return;
+    }
+
+    void AssetManager::getTraj(TrackingResult tracking_res)
     {
         result = tracking_res;
         return;

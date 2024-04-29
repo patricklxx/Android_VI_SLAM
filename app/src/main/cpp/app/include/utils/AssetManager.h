@@ -19,10 +19,12 @@ namespace android_slam
         static AAssetManager* get() { return s_asset_manager; }
         static void set(AAssetManager* manager) { s_asset_manager = manager; }
 
-        static void readFile();
         static void writeFile();
-        void savetraj();
-        void gettraj(TrackingResult tracking_res);
+        static std::string readFile(const std::string fileAdd);
+        void saveTraj();
+        void saveCurPos();
+        void clearFile(const std::string fileAdd);
+        void getTraj(TrackingResult tracking_res);
 
     private:
         static AAssetManager* s_asset_manager;

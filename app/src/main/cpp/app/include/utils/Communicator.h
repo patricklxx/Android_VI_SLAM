@@ -19,7 +19,13 @@ namespace android_slam
     {
     public:
         Communicator();
-        void Run(float x, float y, float z);
-        void Run(TrackingResult track_res);
+        void Run(float x, float y, float z,std::string ip, std::string port);
+        void Run(TrackingResult track_res, std::string ip, std::string port);
+        void Run(TrackingResult track_res, std::string ip, std::string port, std::string start_str);
+        void getStartPos(std::string start_str);
+
+    private:
+        float start_pos[3] = {0.0, 0.0, 0.0};
+        //std::vector<float> start_pos;
     };
 }

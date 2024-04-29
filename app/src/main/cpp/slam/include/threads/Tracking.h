@@ -36,6 +36,9 @@
 
 #include "camera_models/GeometricCamera.h"
 
+#include <android/log.h>
+#define DEBUG_INFO(...) ::__android_log_print(ANDROID_LOG_INFO, "[Android SLAM DEBUG]", __VA_ARGS__)
+
 namespace ORB_SLAM3
 {
 

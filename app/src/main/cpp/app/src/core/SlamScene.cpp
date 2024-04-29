@@ -30,7 +30,7 @@ namespace android_slam
             m_imu_pool = std::make_unique<SensorIMU>();
         }
         else{
-            DatasetImage = ImageLoader::loadDatasetImage("f304/dark_clahe");
+            DatasetImage = ImageLoader::loadDatasetImage("dataset/imgdata_indoor3_15hz_test3");
             first_image = DatasetImage[0];
             //DatasetImu = ImageLoader::loadDatasetImu("data10/imu.txt");
         }
@@ -80,7 +80,7 @@ namespace android_slam
 
                     // Call slam tracking function.
                     //auto res = m_slam_kernel->handleData(images, imu_points);
-                    auto res = m_slam_kernel->handleData(images, {});
+                    auto res = m_slam_kernel->handleData(images, {}, m_scale);
                     m_slam_has_new_data = false; // This image is processed and this thread needs new image.
 
                     // Synchronize tracking result to main thread, move the data because this thread doesn't need it.
@@ -95,8 +95,13 @@ namespace android_slam
         );
         // Create communication thread.
         if(m_open_comm) {
+            std::string start_str = AssetManager::readFile("/storage/emulated/0/Documents/StartPos.txt");
+            m_comm = std::make_unique<Communicator>();
+            m_comm->getStartPos(start_str);
             m_comm_thread = std::make_unique<std::thread>(
                     [this]() {
+                        std::string ip = AssetManager::readFile("/storage/emulated/0/Documents/IP.txt");
+                        std::string port = AssetManager::readFile("/storage/emulated/0/Documents/Port.txt");
                         while (m_is_running_slam) {
                             TrackingResult tracking_res_comm;
                             if (m_comm_has_new_data) {
@@ -104,16 +109,15 @@ namespace android_slam
                                     std::unique_lock<std::mutex> lock(m_comm_mutex);
                                     tracking_res_comm = m_comm_result;
                                 }
-                                DEBUG_INFO("[Android Slam App Info] Before communication.");
                                 if (tracking_res_comm.tracking_status == "OK") {
                                     /*
-                                    comm.Run(tracking_res_comm.trajectory.back().x,
+                                    m_comm->Run(tracking_res_comm.trajectory.back().x,
                                              tracking_res_comm.trajectory.back().y,
-                                             tracking_res_comm.trajectory.back().z);
-                                    */
-                                    comm.Run(tracking_res_comm);
+                                             tracking_res_comm.trajectory.back().z,
+                                                ip, port);
+                                     */
+                                    m_comm->Run(tracking_res_comm, ip, port);
                                 }
-                                DEBUG_INFO("[Android Slam App Info] After communication.");
                                 m_comm_has_new_data = false;
                             }
 
@@ -152,7 +156,7 @@ namespace android_slam
                 }
                 m_slam_has_new_data = true;
             }
-            else{
+            else{// outline dataset
                 {
                     images.push_back(DatasetImage[m_datasets_num]);
                     //imus = ImageLoader::getImuDataset(DatasetImu,
@@ -166,7 +170,7 @@ namespace android_slam
                 }
                 m_slam_has_new_data = true;
             }
-            TrackingResult tracking_res;
+            //TrackingResult tracking_res;
             {
                 std::unique_lock<std::mutex> lock(m_tracking_res_mutex);
                 tracking_res = std::move(m_tracking_result);
@@ -179,14 +183,15 @@ namespace android_slam
 
             m_app_ref.m_last_process_delta_time = tracking_res.processing_delta_time;
 
-            m_file_manager->gettraj(tracking_res);
+            //m_file_manager->getTraj(tracking_res);
 
             //set comm data
             if(!m_comm_has_new_data)
             {
                 {
                     std::unique_lock<std::mutex> lock(m_comm_mutex);
-                    m_comm_result = std::move(tracking_res);
+                    //m_comm_result = std::move(tracking_res);
+                    m_comm_result = tracking_res;
                 }
             }
             m_comm_has_new_data = true;
@@ -230,11 +235,69 @@ namespace android_slam
                 m_app_ref.setActiveScene("Init");
             }
 
-            
+            if (ImGui::Button(m_scale_flag ? u8"还原尺度" : u8"获取尺度"))
+            {
+                //AssetManager::readFile();
+                m_scale_flag = !m_scale_flag;
+                if(m_scale_flag) { //到达标定位，计算尺度
+                    float x = tracking_res.trajectory.back().x;
+                    float y = tracking_res.trajectory.back().y;
+                    float z = tracking_res.trajectory.back().z;
+                    m_scale = 9.0f / sqrt(x*x + y*y + z*z);
+                    if(m_slam_kernel->getPtsRelSize() < 2) {
+                        m_slam_kernel->setPtsRel(x, y, z);
+                    }
+                }
+                else
+                    m_scale = 1.0f;
+            }
+
+            if (ImGui::Button(m_Rt_flag ? u8"还原坐标" : u8"转换坐标"))
+            {
+                m_Rt_flag = !m_Rt_flag;
+                if(m_Rt_flag) {
+                    if(m_slam_kernel->getPtsRelSize() < 3) {
+                        float x = tracking_res.trajectory.back().x;
+                        float y = tracking_res.trajectory.back().y;
+                        float z = tracking_res.trajectory.back().z;
+                        m_slam_kernel->setPtsRel(x, y, z);
+                        m_slam_kernel->CalculateRt();
+                    }
+                    else if(m_slam_kernel->getPtsRelSize() == 3)
+                        m_slam_kernel->setCalRt(true);
+                    else
+                        m_slam_kernel->setCalRt(false);
+                }
+                else
+                    m_slam_kernel->setCalRt(false);
+            }
+
             if (ImGui::Button(u8"保存轨迹"))
             {
-                m_file_manager->savetraj();
+                m_file_manager->getTraj(tracking_res);
+                m_file_manager->saveTraj();
             }
+
+            char* save_mark;
+            switch(markNum) {
+                case 1: save_mark = "保存点1"; break;
+                case 2: save_mark = "保存点2"; break;
+                case 3: save_mark = "保存点3"; break;
+                case 4: save_mark = "保存点4"; break;
+                case 5: save_mark = "保存点5"; break;
+                case 6: save_mark = "保存点6"; break;
+                case 7: save_mark = "保存点7"; break;
+                case 8: save_mark = "保存点8"; break;
+                default: save_mark = "保存点9+"; break;
+            }
+            if (ImGui::Button(save_mark))
+            {
+                if(markNum == 1)
+                    m_file_manager->clearFile("/storage/emulated/0/Documents/MarkPos.txt");
+                m_file_manager->saveCurPos();
+                markNum++;
+            }
+
 
             ImGui::TreePop();
         }
@@ -289,4 +352,5 @@ namespace android_slam
             ImGui::TreePop();
         }
     }
+
 }

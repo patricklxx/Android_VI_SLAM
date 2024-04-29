@@ -9,6 +9,11 @@
 #include <core/System.h>
 #include <utils/Settings.h>
 #include <feature/ORBVocabulary.h>
+#include "frame/KeyFrame.h"
+#include "map/MapPoint.h"
+
+#include <android/log.h>
+#define DEBUG_INFO(...) ::__android_log_print(ANDROID_LOG_INFO, "[Android SLAM DEBUG]", __VA_ARGS__)
 
 namespace android_slam
 {
@@ -22,6 +27,16 @@ namespace android_slam
         ORB_SLAM3::Settings::SettingDesc desc{};
         desc.sensor = ORB_SLAM3::System::eSensor::MONOCULAR;
         desc.cameraInfo.cameraType = ORB_SLAM3::Settings::CameraType::PinHole;
+        //手机相机标定结果
+        desc.cameraInfo.fx = 520.4708852845047f;
+        desc.cameraInfo.fy = 523.7118931356812f;
+        desc.cameraInfo.cx = 319.57018786503784f;
+        desc.cameraInfo.cy = 238.20910561697508f;
+        desc.distortion->k1 = -0.02640806687490354f;
+        desc.distortion->k2 = 0.2033386379661157f;
+        desc.distortion->p1 = 6.519121558220371e-06f;
+        desc.distortion->p2 = -0.0009077232655942344f;
+        /*
         desc.cameraInfo.fx = 458.654f;
         desc.cameraInfo.fy = 457.296f;
         desc.cameraInfo.cx = 367.215f;
@@ -30,19 +45,33 @@ namespace android_slam
         desc.distortion->k2 = 0.07395907f;
         desc.distortion->p1 = 0.00019359f;
         desc.distortion->p2 = 1.76187114e-05f;
+         */
         desc.imageInfo.width = img_width;
         desc.imageInfo.height = img_height;
         desc.imageInfo.newWidth = 640;
         desc.imageInfo.newHeight = 480;
         desc.imageInfo.fps = 20;
         desc.imageInfo.bRGB = true;
+        //手机imu标定结果
+        desc.imuInfo.noiseGyro = 0.00037129946286789615f;
+        desc.imuInfo.noiseAcc = 0.008926024139864043f;
+        desc.imuInfo.gyroWalk = 4.310313880423259e-06f;
+        desc.imuInfo.accWalk = 0.0002903411803301644f;
+        /*
         desc.imuInfo.noiseGyro = 1.7e-4f;
         desc.imuInfo.noiseAcc = 2.0000e-3f;
         desc.imuInfo.gyroWalk = 1.9393e-05f;
         desc.imuInfo.accWalk = 3.0000e-03f;
+         */
         desc.imuInfo.frequency = 200.0f;
-        desc.imuInfo.cvTbc = static_cast<cv::Mat>(cv::Mat_<float>(4, 4) << +0.0148655429818f, -0.99988092969800f, +0.00414029679422f, -0.02164014549750f, +0.9995572490080f, +0.01496721332470f, +0.02571552994800f, -0.06467698676800f, -0.0257744366974f, +0.00375618835797f, +0.99966072717800f, +0.00981073058949f, 0.0f, 0.0f, 0.0f, 1.0f
+        //手机联合标定结果
+        desc.imuInfo.cvTbc = static_cast<cv::Mat>(cv::Mat_<float>(4, 4) << 0.0148655429818f, -0.999880929698f, 0.00414029679422f, -0.0216401454975f,
+                0.999557249008f, 0.0149672133247f, 0.025715529948f, -0.064676986768f,
+                -0.0257744366974f, 0.00375618835797f, 0.999660727178f, 0.00981073058949f,
+                0.0f, 0.0f, 0.0f, 1.0f
         );
+        //desc.imuInfo.cvTbc = static_cast<cv::Mat>(cv::Mat_<float>(4, 4) << +0.0148655429818f, -0.99988092969800f, +0.00414029679422f, -0.02164014549750f, +0.9995572490080f, +0.01496721332470f, +0.02571552994800f, -0.06467698676800f, -0.0257744366974f, +0.00375618835797f, +0.99966072717800f, +0.00981073058949f, 0.0f, 0.0f, 0.0f, 1.0f
+        //);
         desc.imuInfo.bInsertKFsWhenLost = true;
         desc.orbInfo.nFeatures = 1000;
         desc.orbInfo.scaleFactor = 1.2f;
@@ -69,6 +98,11 @@ namespace android_slam
 
         m_orb_slam = std::make_unique<::ORB_SLAM3::System>(
         vocabulary, slam_settings, static_cast<const ORB_SLAM3::System::eSensor>(desc.sensor));
+
+        pts_rel.push_back({0.0, 0.0, 0.0});
+        pts_abs.push_back({0.0, 0.0, 0.0});
+        pts_abs.push_back({9.0, 0.0, 0.0});
+        pts_abs.push_back({42.0, 6.0, 0.0});
     }
 
     // unique_ptr needs to know how to delete the ptr, so the dtor should be impl with the definition of the ptr class.
@@ -82,7 +116,7 @@ namespace android_slam
         m_orb_slam->Reset();
     }
 
-    TrackingResult SlamKernel::handleData(const std::vector<Image>& images, const std::vector<ImuPoint>& imus)
+    TrackingResult SlamKernel::handleData(const std::vector<Image>& images, const std::vector<ImuPoint>& imus, const float scale)
     {
         const Image& image = images[0];
         assert((image.time_stamp >= m_begin_time_stamp) && "Invalid time stamp.");
@@ -139,12 +173,22 @@ namespace android_slam
                     if (!kf || kf->isBad())
                         continue;
 
-                    Eigen::Vector3f position = kf->GetPoseInverse().translation();
-                    res.trajectory.push_back({ position.x(), position.y(), position.z() });
+                    Eigen::Vector3f position = kf->GetPoseInverse().translation() * scale;
+                    if(CalRt) {
+                        Eigen::Vector3f position_trans = R * position + t;
+                        res.trajectory.push_back({position_trans.x(), position_trans.y(), position_trans.z()});
+                    }
+                    else
+                        res.trajectory.push_back({ position.x(), position.y(), position.z() });
                 }
 
-                Eigen::Vector3f last_position = pose.inverse().translation();
-                res.trajectory.push_back({ last_position.x(), last_position.y(), last_position.z() });
+                Eigen::Vector3f last_position = pose.inverse().translation() * scale;
+                if(CalRt) {
+                    Eigen::Vector3f last_position_trans = R * last_position + t;
+                    res.trajectory.push_back({last_position_trans.x(), last_position_trans.y(), last_position_trans.z()});
+                }
+                else
+                    res.trajectory.push_back({ last_position.x(), last_position.y(), last_position.z() });
             }
 
             {
@@ -210,6 +254,55 @@ namespace android_slam
         }
 
         return res;
+    }
+
+    void SlamKernel::CalculateRt() {
+        if(pts_rel.size() == pts_abs.size()) {
+            //1. 计算质心坐标
+            cv::Point3f p1, p2;
+            int N = pts_abs.size();
+            for(int i = 0; i < N; i++) {
+                p1 += pts_abs[i];
+                p2 += pts_rel[i];
+            }
+            p1 = cv::Point3f(cv::Vec3f(p1) / N);
+            p2 = cv::Point3f(cv::Vec3f(p2) / N);
+
+            //2. 计算去质心坐标
+            vector<cv::Point3f> q1(N);
+            vector<cv::Point3f> q2(N);
+            for(int i = 0; i < N; i++) {
+                q1[i] = pts_abs[i] - p1;
+                q2[i] = pts_rel[i] - p2;
+            }
+
+            //3. 计算矩阵W  q1 * q2^T
+            Eigen::Matrix3d W = Eigen::Matrix3d::Zero();
+            for(int i = 0; i < N; i++)
+                W += Eigen::Vector3d(q1[i].x, q1[i].y, q1[i].z) * Eigen::Vector3d(q2[i].x, q2[i].y, q2[i].z).transpose();
+            //cout << "W = \n" << W << endl;
+
+            // 4. SVD 分解 W , 计算R
+            Eigen::JacobiSVD<Eigen::Matrix3d> svd(W, Eigen::ComputeFullU | Eigen::ComputeFullV);
+            Eigen::Matrix3d U = svd.matrixU();
+            Eigen::Matrix3d V = svd.matrixV();
+            if(U.determinant() * V.determinant() < 0) {
+                for(int x = 0; x < 3; x++)
+                    U(x, 2) *= -1;
+            }
+            R = (U*(V.transpose())).cast<float>();
+
+            // 5. 由旋转矩阵R, 计算平移     t_ = p - Rp
+            t = Eigen::Vector3f(p1.x, p1.y, p1.z) - R * Eigen::Vector3f(p2.x, p2.y, p2.z);
+
+            setCalRt(true);
+            pts_rel.clear();
+            pts_rel.push_back({0.0, 0.0, 0.0});
+        }
+        else
+            setCalRt(false);
+
+        return;
     }
 
 }

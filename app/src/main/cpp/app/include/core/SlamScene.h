@@ -18,6 +18,8 @@
 #include "utils/Communicator.h"
 #include "utils/AssetManager.h"
 
+#include <string.h>
+
 
 namespace android_slam
 {
@@ -64,12 +66,13 @@ namespace android_slam
 
         bool m_need_update_image = true;
 
-        bool m_open_comm = false;
+        // communication tread
+        bool m_open_comm = 0;
+        std::unique_ptr<Communicator> m_comm;
         std::unique_ptr<std::thread> m_comm_thread;
         std::mutex                   m_comm_mutex;
         std::atomic_bool             m_comm_has_new_data = false;
         TrackingResult               m_comm_result;
-        Communicator comm;
 
         //离线数据
         bool m_from_datasets = 0; //是否从数据集中获取离线数据
@@ -79,6 +82,16 @@ namespace android_slam
 
         //本地文件管理
         std::unique_ptr<AssetManager> m_file_manager;
+
+        //标定尺度标志位
+        bool m_scale_flag = false;
+        float m_scale = 1.0f;
+        TrackingResult tracking_res; //主线程结果存放
+
+        //Rt第三个标志位
+        bool m_Rt_flag = false;
+        //记录保存点数
+        int markNum = 1;
 
     };
 
