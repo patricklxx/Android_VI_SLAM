@@ -21,7 +21,7 @@ namespace android_slam
         Communicator();
         void Run(float x, float y, float z,std::string ip, std::string port);
         void Run(TrackingResult track_res, std::string ip, std::string port);
-        void Run(TrackingResult track_res, std::string ip, std::string port, std::string start_str);
+        //void Run(TrackingResult track_res, std::string ip, std::string port, std::string start_str);
         void getStartPos(std::string start_str);
 
     private:

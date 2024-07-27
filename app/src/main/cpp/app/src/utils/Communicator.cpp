@@ -56,10 +56,13 @@ namespace android_slam
         DEBUG_INFO("[Android Slam App Info] Socket create succesfully.");
         struct sockaddr_in addr;
         addr.sin_family = AF_INET;
+        //addr.sin_port = htons(9090);
+        //addr.sin_addr.s_addr = inet_addr("192.168.43.172");
         addr.sin_port = htons(std::stoi(port));
         addr.sin_addr.s_addr = inet_addr(ip.c_str());
 
         int res = connect(socket_fd, (struct sockaddr *)&addr, sizeof(addr));
+
         if (res == -1)
         {
             DEBUG_INFO("[Android Slam App Info] Socket connect failed.");

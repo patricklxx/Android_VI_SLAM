@@ -101,8 +101,16 @@ namespace android_slam
 
         pts_rel.push_back({0.0, 0.0, 0.0});
         pts_abs.push_back({0.0, 0.0, 0.0});
+        //f304外方形走廊锚点，起点为f304外角
         pts_abs.push_back({9.0, 0.0, 0.0});
-        pts_abs.push_back({42.0, 6.0, 0.0});
+        pts_abs.push_back({38.4, 6.0, 0.0});
+        //f304外方形走廊锚点，起点为f315外角，逆时针
+        //pts_abs.push_back({9.0, 0.0, 0.0});
+        //pts_abs.push_back({42.0, 6.0, 0.0});
+        //f304锚点
+        //pts_abs.push_back({0.0, 4.0, 0.0});
+        //pts_abs.push_back({-3.0, 5.0, 0.0});
+
     }
 
     // unique_ptr needs to know how to delete the ptr, so the dtor should be impl with the definition of the ptr class.

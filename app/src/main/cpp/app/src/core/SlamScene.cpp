@@ -65,17 +65,18 @@ namespace android_slam
         m_slam_thread = std::make_unique<std::thread>(
         [this]()
         {
-            std::vector<Image> images;
-            std::vector<ImuPoint> imu_points;
+            //std::vector<Image> images;
+            //std::vector<ImuPoint> imu_points;
             while (m_is_running_slam)
             {
                 if (m_slam_has_new_data)
                 {
                     // Acquire new images.
+                    std::vector<Image> images;
                     {
                         std::unique_lock<std::mutex> lock(m_image_mutex);
                         images = std::move(m_images);
-                        imu_points = std::move(m_imu_points);
+                        //imu_points = std::move(m_imu_points);
                     }
 
                     // Call slam tracking function.
@@ -100,8 +101,10 @@ namespace android_slam
             m_comm->getStartPos(start_str);
             m_comm_thread = std::make_unique<std::thread>(
                     [this]() {
-                        std::string ip = AssetManager::readFile("/storage/emulated/0/Documents/IP.txt");
                         std::string port = AssetManager::readFile("/storage/emulated/0/Documents/Port.txt");
+                        std::string ip = AssetManager::readFile("/storage/emulated/0/Documents/IP.txt");
+                        //DEBUG_INFO("[Android Slam App Info] port: %s", port.c_str());
+                        //DEBUG_INFO("[Android Slam App Info] ip: %s", ip.c_str());
                         while (m_is_running_slam) {
                             TrackingResult tracking_res_comm;
                             if (m_comm_has_new_data) {
@@ -146,13 +149,13 @@ namespace android_slam
         {
             // Slam handling.
             std::vector<Image> images;
-            std::vector<ImuPoint> imus;
+            //std::vector<ImuPoint> imus;
             if(!m_from_datasets) {
                 images.push_back(m_image_pool->getImage());
                 {
                     std::unique_lock<std::mutex> lock(m_image_mutex);
                     m_images = images;
-                    m_imu_points = m_imu_pool->getImuData();
+                    //m_imu_points = m_imu_pool->getImuData();
                 }
                 m_slam_has_new_data = true;
             }
@@ -294,6 +297,7 @@ namespace android_slam
             {
                 if(markNum == 1)
                     m_file_manager->clearFile("/storage/emulated/0/Documents/MarkPos.txt");
+                m_file_manager->getTraj(tracking_res);
                 m_file_manager->saveCurPos();
                 markNum++;
             }

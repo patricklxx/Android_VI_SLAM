@@ -67,7 +67,7 @@ namespace android_slam
         bool m_need_update_image = true;
 
         // communication tread
-        bool m_open_comm = 0;
+        bool m_open_comm = 1;
         std::unique_ptr<Communicator> m_comm;
         std::unique_ptr<std::thread> m_comm_thread;
         std::mutex                   m_comm_mutex;
