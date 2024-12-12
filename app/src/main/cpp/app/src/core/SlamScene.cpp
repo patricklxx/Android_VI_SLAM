@@ -238,6 +238,17 @@ namespace android_slam
                 m_app_ref.setActiveScene("Init");
             }
 
+            if (ImGui::Button(m_first_flag ? u8"已获取初始点" : u8"获取初始点"))
+            {
+                m_first_flag = !m_first_flag;
+                if(m_slam_kernel->getPtsRelSize() == 0) {
+                    m_slam_kernel->setPtsRel(tracking_res.trajectory.back().x,
+                                             tracking_res.trajectory.back().y,
+                                             tracking_res.trajectory.back().z);
+                }
+
+            }
+
             if (ImGui::Button(m_scale_flag ? u8"还原尺度" : u8"获取尺度"))
             {
                 //AssetManager::readFile();
@@ -246,7 +257,13 @@ namespace android_slam
                     float x = tracking_res.trajectory.back().x;
                     float y = tracking_res.trajectory.back().y;
                     float z = tracking_res.trajectory.back().z;
-                    m_scale = 9.0f / sqrt(x*x + y*y + z*z);
+                    //m_scale = 9.0f / sqrt(x*x + y*y + z*z);
+                    if(m_slam_kernel->getPtsRelSize() == 1) {
+                        cv::Point3f first_pts = m_slam_kernel->getFirstPtsRel();
+                        m_scale = 9.0f / sqrt((x-first_pts.x)*(x-first_pts.x)
+                                +(y-first_pts.y)*(y-first_pts.y)
+                                +(z-first_pts.z)*(z-first_pts.z));
+                    }
                     if(m_slam_kernel->getPtsRelSize() < 2) {
                         m_slam_kernel->setPtsRel(x, y, z);
                     }

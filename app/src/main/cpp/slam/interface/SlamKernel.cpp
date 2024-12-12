@@ -102,14 +102,25 @@ namespace android_slam
         pts_rel.push_back({0.0, 0.0, 0.0});
         pts_abs.push_back({0.0, 0.0, 0.0});
         //f304外方形走廊锚点，起点为f304外角
-        pts_abs.push_back({9.0, 0.0, 0.0});
-        pts_abs.push_back({38.4, 6.0, 0.0});
+        //pts_abs.push_back({9.0, 0.0, 0.0});
+        //pts_abs.push_back({38.4, 0.0, 6.0});
         //f304外方形走廊锚点，起点为f315外角，逆时针
         //pts_abs.push_back({9.0, 0.0, 0.0});
         //pts_abs.push_back({42.0, 6.0, 0.0});
         //f304锚点
         //pts_abs.push_back({0.0, 4.0, 0.0});
         //pts_abs.push_back({-3.0, 5.0, 0.0});
+        //f304不同起点锚点
+        //pts_abs.push_back({-18.0, 0.0, 0.0});
+        //pts_abs.push_back({-27.0, 0.0, 0.0});
+        //pts_abs.push_back({-38.4, 0.0, 6.0});
+        //根据闭环优化调整的锚点位置
+        //pts_abs.push_back({0.0, 0.0, 0.0});
+        //pts_abs.push_back({-9.0, 0.0, 0.0});
+        //pts_abs.push_back({-21.6, 0.0, 6.0});
+        //f304外方形走廊锚点，起点为f304门口，顺时针
+        pts_abs.push_back({-9.0, 0.0, 0.0});
+        pts_abs.push_back({-28.8, 0.0, 6.0});
 
     }
 

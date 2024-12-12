@@ -71,7 +71,8 @@ namespace android_slam
 
         void reset();
 
-        void setPtsRel(float x, float y, float z) { pts_rel.push_back({x, y, z}); };
+        void setPtsRel(float x, float y, float z) { pts_rel.push_back({x, y, z}); }
+        cv::Point3f getFirstPtsRel() { return pts_rel[0]; }
         int getPtsRelSize() { return pts_rel.size(); }
         void setCalRt(bool flag) { CalRt = flag; }
         void CalculateRt();

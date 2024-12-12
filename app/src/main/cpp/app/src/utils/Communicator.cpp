@@ -79,8 +79,10 @@ namespace android_slam
         for(auto &data : track_res.trajectory)
         {
             commu_data[count++] = data.x + start_pos[0];
-            commu_data[count++] = data.y + start_pos[1];
-            commu_data[count++] = data.z + start_pos[2];
+            //commu_data[count++] = data.y + start_pos[1];
+            //commu_data[count++] = data.z + start_pos[2];
+            commu_data[count++] = data.z + start_pos[1];
+            commu_data[count++] = data.y + start_pos[2];
         }
         send(socket_fd, (char *)commu_data, sizeof(commu_data), 0);
         DEBUG_INFO("[Android Slam App Info] sizeof(commu_data) = %d", sizeof(commu_data));

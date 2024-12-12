@@ -83,6 +83,9 @@ namespace android_slam
         //本地文件管理
         std::unique_ptr<AssetManager> m_file_manager;
 
+        //第一个标志位
+        bool m_first_flag = false;
+
         //标定尺度标志位
         bool m_scale_flag = false;
         float m_scale = 1.0f;
